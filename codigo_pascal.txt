@@ -1,0 +1,11 @@
+pragram miEjemlpo;
+
+function sumar(a: integer; b: integer): integer;
+begin
+  sumar := a + b;
+end;
+var
+  i,j: integer;
+begin
+  j = 2*i();
+end.
