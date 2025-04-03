@@ -1,11 +1,23 @@
-pragram miEjemlpo;
+var a: integer;
+    b: real;
 
-function sumar(a: integer; b: integer): integer;
 begin
-  sumar := a + b;
-end;
-var
-  i,j: integer;
-begin
-  j = 2*i();
+  a := 0;
+  b := 5.0;
+
+  writeln('Inicio del programa');
+
+  if a = 0 then
+    writeln('a es cero');
+
+  for a := 1 to 3 do
+    writeln('Ciclo for:');
+
+  while a < 5 do
+  begin
+    writeln('Ciclo while');
+    a := a + 1;
+  end;
+
+  writeln('Fin del programa');
 end.
