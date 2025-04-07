@@ -1,25 +1,41 @@
-#include <stdio.h>
+#include "lexer.h"
 #include "parser.h"
+#include "ast.h"
+#include "semantic.h"
+#include "symbol_table.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 int main() {
-    // Abre el archivo Pascal para análisis
-    FILE* archivo = fopen("codigo_pascal.txt", "r");
-    if (archivo == NULL) {
-        printf("No se pudo abrir el archivo.\n");
-        return 1;
-    }
+    char filename[256];
+    printf("Ingrese la ruta del archivo Pascal (.pas): ");
+    scanf("%255s", filename);
 
-    // Crea el nodo raíz para el AST
-    Nodo* raiz = crear_nodo("programa", "");
-    
-    // Llama a la función que analiza el archivo y genera el AST
-    analizar_archivo(archivo, raiz);
+    // Fase 1: análisis léxico
+    init_lexer(filename);
+    printf("\n==== Tokens lexicos ====\n");
+    Token t;
+    do {
+        t = next_token();
+        printf("[Linea %d] Token: %-15s (%s)\n", t.line, token_type_to_string(t.type), t.lexeme);
+        free(t.lexeme);
+    } while (t.type != TOKEN_EOF && t.type != TOKEN_ERROR);
+    close_lexer();
 
-    // Cierra el archivo después de ser leído
-    fclose(archivo);
+    // Fase 2: análisis sintáctico y AST
+    init_lexer(filename);
+    ASTNode* root = parse();
 
-    // Imprime el AST resultante
-    imprimir_ast(raiz, 0);
+    printf("\n==== Arbol de Sintaxis Abstracta ====\n");
+    print_ast(root, 0);
 
+    // Fase 3: análisis semántico
+    printf("\n==== Analisis semantico ====\n");
+
+    semantic_check(root);
+
+    free_ast(root);
+    reset_symbol_table();
+    close_lexer();
     return 0;
 }
