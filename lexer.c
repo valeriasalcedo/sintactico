@@ -1,105 +1,128 @@
-// lexer.c
-#include <stdio.h>
-#include <stdlib.h>
+#include "lexer.h"
 #include <string.h>
 #include <ctype.h>
-#include <stdbool.h>
-#include "lexer.h"
+#include <stdlib.h>
+#include <stdio.h>
 
-const char* palabras_reservadas[] = {
-    "var", "begin", "end", "if", "then", "else", "while", "do", "for", "to", "downto", "repeat", "until", "writeln", "integer", "real"
-};
+bool end_with_semicolon(const char* str) {
+    char temp[256];
+    strcpy(temp, str);
+    trim(temp);
+    size_t len = strlen(temp);
+    return temp[len - 1] == ';';
+}
 
-bool es_reservada(const char* palabra) {
-    for (int i = 0; i < sizeof(palabras_reservadas) / sizeof(palabras_reservadas[0]); i++) {
-        if (strcmp(palabra, palabras_reservadas[i]) == 0) {
-            return true;
+void removeSpaces(char *str) {
+    char *dst = str; 
+    while (*str) {
+        if (!isspace((unsigned char)*str)) { 
+            *dst++ = *str; 
         }
+        str++;
     }
-    return false;
+    *dst = '\0'; 
 }
 
-bool es_entero(const char* palabra) {
-    for (int i = 0; palabra[i]; i++) {
-        if (!isdigit(palabra[i])) return false;
+void trim(char *str) {
+    char *start = str;
+    char *end;
+
+    while (*start && isspace((unsigned char)*start)) start++;
+    if (*start == '\0') {
+        *str = '\0';
+        return;
     }
-    return true;
+
+    end = start + strlen(start) - 1;
+    while (end > start && isspace((unsigned char)*end)) end--;
+
+    memmove(str, start, end - start + 1);
+    str[end - start + 1] = '\0';
 }
 
-bool es_real(const char* palabra) {
-    int punto = 0;
-    for (int i = 0; palabra[i]; i++) {
-        if (palabra[i] == '.') punto++;
-        else if (!isdigit(palabra[i])) return false;
+void trim_semicolon(char *str) {
+    int len = strlen(str);
+    while (len > 0 && str[len - 1] == ';') {
+        str[len - 1] = '\0';
+        len--;
     }
-    return punto == 1;
 }
 
-bool es_cadena(const char* palabra) {
-    int len = strlen(palabra);
-    return len >= 2 && palabra[0] == '\'' && palabra[len - 1] == '\'';
+bool starts_with(const char* str, const char* prefix) {
+    return strncmp(str, prefix, strlen(prefix)) == 0;
 }
 
-void analizar_linea_lexico(const char* linea, int numero_linea) {
-    printf("[LINEA %d]: %s\n", numero_linea, linea);
+bool ends_with(const char* str, const char* suffix) {
+    if (!str || !suffix) return false;
+    size_t str_len = strlen(str);
+    size_t suffix_len = strlen(suffix);
+    if (suffix_len > str_len) return false;
+    return strncmp(str + str_len - suffix_len, suffix, suffix_len) == 0;
+}
 
-    // Extraer cadenas primero para evitar tokenizar sus partes
-    const char* p = linea;
-    while ((p = strchr(p, '\'')) != NULL) {
-        const char* fin = strchr(p + 1, '\'');
-        if (fin) {
-            int len = fin - p + 1;
-            char* cadena = (char*)malloc(len + 1);
-            strncpy(cadena, p, len);
-            cadena[len] = '\0';
-            printf("[CADENA] %s\n", cadena);
-            free(cadena);
-            p = fin + 1;
-        } else {
-            break;
+char **split(const char *str, const char *delim, int *count) {
+    char *copia = strdup(str); 
+    int capacidad = 10; 
+    char **resultado = (char **)malloc(capacidad * sizeof(char *)); 
+    int index = 0;
+    char *token = strtok(copia, delim);
+    while (token != NULL) { 
+        if (index >= capacidad) { 
+            capacidad *= 2;
+            resultado = (char **)realloc(resultado, capacidad * sizeof(char *));
         }
+        resultado[index++] = strdup(token);  
+        token = strtok(NULL, delim); 
     }
-
-    // Crear una copia sin cadenas para tokenizar
-    char sin_cadenas[256];
-    int i = 0, j = 0;
-    bool dentro_cadena = false;
-    while (linea[i] != '\0') {
-        if (linea[i] == '\'') {
-            dentro_cadena = !dentro_cadena;
-            sin_cadenas[j++] = ' ';
-        } else {
-            sin_cadenas[j++] = dentro_cadena ? ' ' : linea[i];
-        }
-        i++;
+    resultado[index] = NULL;  
+    *count = index; 
+    free(copia); 
+    return resultado; 
+}
+char **split_function(const char *str, int *count) {
+    char *copia = strdup(str);
+    char **resultado = (char **)malloc(2 * sizeof(char *));
+    *count = 1;
+    char *pos = strrchr(copia, ':');
+    if (pos == NULL) {
+        resultado[0] = strdup(copia);
+        resultado[1] = NULL;
+    } else {
+        *pos = '\0';
+        resultado[0] = strdup(copia);
+        resultado[1] = strdup(pos + 1);
+        *count = 2;
     }
-    sin_cadenas[j] = '\0';
-
-    const char* delimitadores = " \t\n;():=+-*/<>", *delim = ";():=+-*/<>";
-    char buffer[256];
-    strcpy(buffer, sin_cadenas);
-
-    char* token = strtok(buffer, delimitadores);
-    while (token != NULL) {
-        if (es_reservada(token)) {
-            printf("[RESERVADA] %s\n", token);
-        } else if (es_entero(token)) {
-            printf("[ENTERO] %s\n", token);
-        } else if (es_real(token)) {
-            printf("[REAL] %s\n", token);
-        } else {
-            printf("[IDENTIFICADOR] %s\n", token);
-        }
-        token = strtok(NULL, delimitadores);
-    }
+    free(copia);
+    return resultado;
 }
 
-void analizar_archivo_lexico(FILE* archivo) {
-    printf("===== ANÁLISIS LÉXICO =====\n");
-    char linea[256];
-    int num_linea = 1;
-    while (fgets(linea, sizeof(linea), archivo)) {
-        analizar_linea_lexico(linea, num_linea++);
+char *extraer_parentesis(const char *str) {
+    const char *inicio = strchr(str, '('); 
+    const char *fin = strrchr(str, ')');   
+    if (!inicio || !fin || inicio > fin) return NULL;
+    size_t len = fin - inicio - 1; 
+    char *resultado = (char *)malloc(len + 1);
+    strncpy(resultado, inicio + 1, len); 
+    resultado[len] = '\0';
+    return resultado;
+}
+
+char* extraer_argumentos_funcion(const char* str) {
+    const char* inicio = strchr(str, '(');
+    if (!inicio) return NULL;
+    const char* fin = strrchr(str, ')');
+    if (!fin || fin < inicio) return NULL;
+    size_t len = fin - inicio - 1;
+    char* resultado = (char*)malloc(len + 1);
+    strncpy(resultado, inicio + 1, len);
+    resultado[len] = '\0';
+    return resultado;
+}
+
+void toLowerCase(char *str) {
+    while (*str) {
+        *str = tolower((unsigned char) *str);
+        str++;
     }
-    rewind(archivo);
 }

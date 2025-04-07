@@ -1,36 +1,18 @@
-// lexer.h
 #ifndef LEXER_H
 #define LEXER_H
 
-#include <stdio.h>
 #include <stdbool.h>
 
-typedef enum {
-    TOKEN_IDENTIFICADOR,
-    TOKEN_ENTERO,
-    TOKEN_REAL,
-    TOKEN_CADENA,
-    TOKEN_CARACTER,
-    TOKEN_RESERVADA,
-    TOKEN_OPERADOR,
-    TOKEN_DESCONOCIDO
-} TipoToken;
-
-typedef struct {
-    TipoToken tipo;
-    char valor[100];
-} Token;
-
-void analizar_linea_lexico(const char* linea, int numero_linea);
-void analizar_archivo_lexico(FILE* archivo);
-const char* tipo_token_str(TipoToken tipo);
-bool es_palabra_reservada(const char* palabra);
-bool es_operador(const char* palabra);
-bool es_numero_entero(const char* str);
-bool es_numero_real(const char* str);
-bool es_cadena_valida(const char* str);
-bool es_caracter_valido(const char* str);
-void trim(char* str);
-void toLowerCase(char* str);
+bool end_with_semicolon(const char* str);
+void removeSpaces(char *str);
+void trim(char *str);
+void trim_semicolon(char *str);
+bool starts_with(const char* str, const char* prefix);
+bool ends_with(const char* str, const char* suffix);
+char **split(const char *str, const char *delim, int *count);
+char **split_function(const char *str, int *count);
+char *extraer_parentesis(const char *str);
+char *extraer_argumentos_funcion(const char *str);
+void toLowerCase(char *str);
 
 #endif

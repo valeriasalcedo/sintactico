@@ -2,21 +2,18 @@
 #define PARSER_H
 
 #include <stdio.h>
+#include "lexer.h"
+#include "semantico.h"
 
-// Definición del nodo del AST
-typedef struct Nodo {
-    char tipo[32];
-    char valor[128];
-    struct Nodo* hijos[10];
-    int num_hijos;
-} Nodo;
-
-// Funciones para crear, agregar hijos e imprimir el AST
-Nodo* crear_nodo(const char* tipo, const char* valor);
-void agregar_hijo(Nodo* padre, Nodo* hijo);
-void imprimir_ast(Nodo* nodo, int nivel);
-
-// Función para analizar el archivo y generar el AST
-void analizar_archivo(FILE* archivo, Nodo* raiz);
+void analizar_palabra_clave(Nodo* arbol, const char* linea, int *num_linea, bool fromF_Or_P, FILE* archivo);
+void analizar_cabecera_funcion(Nodo* arbol, char* linea, int num_linea, char* nombre_funcion);
+void analizar_funcion(Nodo* arbol, char* linea, int* num_linea, FILE* archivo, char* nombre_funcion);
+void analizar_expresion(Nodo* arbol, char* expr, int num_linea);
+void analizar_asignacion(Nodo* arbol, const char* linea, int num_linea);
+void imprimir_arbol(Nodo* nodo, int nivel);
+void analizar_writeln(Nodo* arbol, const char* linea, int num_linea);
+void analizar_if(Nodo* arbol, const char* linea, int *num_linea, FILE* archivo);
+void analizar_while(Nodo* arbol, const char* linea, int *num_linea, FILE* archivo);
+void analizar_for(Nodo* arbol, const char* linea, int *num_linea, FILE* archivo);
 
 #endif
